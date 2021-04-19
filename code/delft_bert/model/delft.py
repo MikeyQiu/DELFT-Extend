@@ -18,6 +18,7 @@ class RGCNLayer(nn.Module):
         self.is_input_layer = is_input_layer
         self.evidence_input_encoder = Encoder_rnn(args)
         self.evidence_hidden_encoder = Encoder_rnn(args)
+        #attention module and score function
         self.evidence_word_attn = BilinearSeqAttn(self.args.hidden_size * 2, self.args.hidden_size * 2)
         self.evidence_sent_attn = BilinearSeqAttn(self.args.hidden_size * 2, self.args.hidden_size * 2)
         self.evidence_score = nn.Bilinear(self.args.hidden_size * 2, self.args.hidden_size * 2, 1)
@@ -26,31 +27,38 @@ class RGCNLayer(nn.Module):
             nn.Linear(self.args.hidden_size * 2, self.args.hidden_size * 2),
             nn.Dropout(0.5),
             nn.ReLU())
-
+        #reduce dimension in the final? 4x->2x
         self.reduce_linear = torch.nn.Sequential(
             nn.Linear(self.args.hidden_size * 4, self.args.hidden_size * 2),
             nn.Dropout(0.5),
             nn.ReLU())
 
+        #hidden layer for question
         self.hq_linear = torch.nn.Sequential(
             nn.Linear(self.args.hidden_size * 2, self.args.hidden_size * 2),
             nn.Dropout(0.5),
             nn.ReLU())
+
+        #hidden layer
         self.h_linear = torch.nn.Sequential(
             nn.Linear(self.args.hidden_size * 2, self.args.hidden_size * 2),
             nn.Dropout(0.5),
             nn.ReLU())
+
+        #evidence
         self.evi_linear = torch.nn.Sequential(
             nn.Linear(self.args.hidden_size * 2, self.args.hidden_size * 2),
             nn.Dropout(0.5),
             nn.ReLU())
     
-
+    #g: graph dgl module
     def propagate(self, g):
+        # input layer
         if self.is_input_layer:
             '''
             Get edge representation
             '''
+            #messgae function
             def msg_func(edges):
                 evi = edges.data['evidence']
                 evi_mask = edges.data['evidence_mask']
@@ -85,23 +93,25 @@ class RGCNLayer(nn.Module):
                 return {'evi_sent_rep': evidence_sent_rep, 'score': evi_sent_score}
         else:
             def msg_func(edges):
-
+                #out put of linear module, evidence_word_rep
                 evidence_word_rep = self.evidence_rep_linear(edges.data['evi_rep'])
+                #expand
                 sent_len = edges.data['evidence_sent_mask'].eq(0).sum(1).unsqueeze(1).float()
+                #torch.div?
                 evidence_sent_rep = torch.div(evidence_word_rep.sum(1), sent_len)
 
                 
                 edges.data['evi_rep'] = evidence_word_rep
 
                 evi_sent_score = self.evidence_score(evidence_sent_rep, edges.src['hq'])
-
+                #embedding and score
                 return {'evi_sent_rep': evidence_sent_rep, 'score': evi_sent_score}
         
         def softmax_feat(edges):
             return {'normalized_score': F.softmax(edges.data['score'], dim=1)}
 
         def reduce_func(nodes):
-
+            #mailbox? dgl
             sc = nodes.mailbox['sc']
             v = nodes.mailbox['msg']
             c = nodes.mailbox['c']
@@ -130,7 +140,7 @@ class RGCNLayer(nn.Module):
         if 'evidence' in g.edata:
             g.apply_edges(msg_func)
             #### Get incoming edge score for each candidate node
-            g.group_apply_edges(func=softmax_feat, group_by='src')
+            g.group_apply_edges(func=softmax_feat, group_by='src') #group apply?
         
         
         g.update_all(edge_aggv, reduce_func, apply_node_func)
@@ -141,7 +151,7 @@ class RGCNLayer(nn.Module):
 
 
 
-
+#Encode information
 class Encoder_rnn(nn.Module):
     '''
     Encoder layer (GRU)
@@ -193,15 +203,16 @@ class LinearAttn(nn.Module):
         Output:
             alpha: batch * len
         """
+        #flat to given size
         x_flat = x.view(x.size(0) * x.size(1), x.size(2))
         ##### change to batch * len * hdim
         scores = self.linear(x_flat).view(x.size(0), x.size(1))
-      
+        #masked_fill_？
         scores.data.masked_fill_(x_mask.data, -float('inf'))
         alpha = F.softmax(scores, dim=1)
 
         #x = x.transpose(0, 1)
-        output_avg = alpha.unsqueeze(1).bmm(x).squeeze(1)
+        output_avg = alpha.unsqueeze(1).bmm(x).squeeze(1) #bmm?
 
         return output_avg
 

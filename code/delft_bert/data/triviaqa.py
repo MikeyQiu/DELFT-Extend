@@ -66,11 +66,12 @@ class GNNBertModel(BertModel):
         return outputs  # sequence_output, pooled_output, (hidden_states), (attentions)
 
 
-
+#load pretained bert model
 bert_model = GNNBertModel.from_pretrained('bert-base-uncased', cache_dir=PYTORCH_PRETRAINED_BERT_CACHE / 'distributed_{}'.format(-1)).to('cuda')
 
 '''
 Data vectorization into DGL graph
+from json to dgl.g
 '''
 
 def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
@@ -80,8 +81,9 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
     positive_entity = ex['pos_et']
     negative_entities = ex['neg_ets']
 
-    num_edges = 5
-    g = DGLGraph()
+    num_edges = 5 #?
+    g = DGLGraph() #instance
+
     question_node_list = list()
     candidate_node_list = list()
     first_sent_tokens = list()
@@ -96,10 +98,10 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
 
     ### Since Trivia QA question has much fewer entities, we also incorporate IR retrieved pages 
     ### as additional entities linked to candidate nodes (So that we get some more edge evidence sentences)
-    for sup_q in ex['q_et']:
+    for sup_q in ex['q_et']: #each question entity
         
         sub_question = sup_q['text']
-        input_ids, input_mask = text_tokenize(sub_question, tokenizer, max_seq_length)
+        input_ids, input_mask = text_tokenize(sub_question, tokenizer, max_seq_length) #utils text tokenize?id and mask
         question_tokens.append(input_ids)
         question_masks.append(input_mask)
 
@@ -112,7 +114,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
             question_node_list.append(topic)
             question_idx = len(question_tokens) - 1
             node_sub_questions.append(question_idx)
-            input_ids, input_mask = text_tokenize(node_first_sent, tokenizer, max_seq_length)
+            input_ids, input_mask = text_tokenize(node_first_sent, tokenizer, max_seq_length) #utils text tokenize?id and mask
             
             first_sent_tokens.append(input_ids)
             first_sent_masks.append(input_mask)
@@ -122,7 +124,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
 
    
 
-    candidate_node_list.append(normalize(positive_entity['et']))
+    candidate_node_list.append(normalize(positive_entity['et'])) #normalized
     input_ids, input_mask = text_tokenize(positive_entity['first_sent'], tokenizer, max_seq_length)
     first_sent_tokens.append(input_ids)
     first_sent_masks.append(input_mask)
@@ -135,7 +137,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
         first_sent_tokens.append(input_ids)
         first_sent_masks.append(input_mask)
         node_sub_questions.append(0)
-
+    #nodes
     num_nodes = len(question_node_list) + len(candidate_node_list)
     g.add_nodes(num_nodes)
 
@@ -145,12 +147,13 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
     all_tokens = question_tokens + first_sent_tokens
     all_masks = question_masks + first_sent_masks
 
-    all_tensor = torch.LongTensor(all_tokens).to(device)
-    all_masks_tensor = torch.LongTensor(all_masks).to(device)
+    all_tensor = torch.LongTensor(all_tokens).to(device) #token as tensor
+    all_masks_tensor = torch.LongTensor(all_masks).to(device) #masked token as tensor
     all_encodings = list()
     num_exs = 50
+    #Generate encoding? what is this
     for iii in range(int(all_tensor.size(0) / num_exs)):
-        encoding, _ = bert_model(all_tensor[iii * num_exs: (iii + 1) * num_exs], None, all_masks_tensor[iii * num_exs: (iii + 1) * num_exs])
+        encoding, _ = bert_model(all_tensor[iii * num_exs: (iii + 1) * num_exs], None, all_masks_tensor[iii * num_exs: (iii + 1) * num_exs]) #bert_model()?
         encoding = encoding.detach().cpu()
         all_encodings.append(encoding)
     if all_tensor.size(0) % num_exs > 0:
@@ -162,7 +165,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
     all_masks_tensor = all_masks_tensor.cpu()
 
 
-
+    #saved for graph
     g.ndata['first_sent'] = all_encodings[num_questions:].cpu()
     g.ndata['first_sent_mask'] = all_masks_tensor[num_questions:].cpu().eq(0)
 
@@ -171,7 +174,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
 
     for i in range(len(question_node_list)):
         sub_q_num = node_sub_questions[i]
-        
+        #distribute each node with its feature
         g.nodes[i].data['question'] = all_encodings[sub_q_num].unsqueeze(0)
         g.nodes[i].data['question_mask'] =all_masks_tensor[sub_q_num].unsqueeze(0).eq(0)
         g.nodes[i].data['label'] = torch.tensor(-1).unsqueeze(0)
@@ -190,12 +193,12 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
 
 
 
-
+    #positive entities
     for k_entity in positive_entity['evidence']:
-        normalized_k_entity = normalize(k_entity)
+        normalized_k_entity = normalize(k_entity)  #normalize
         if normalized_k_entity in question_node_list:
-            s_id = question_node_list.index(normalized_k_entity)
-            g.add_edge(question_node_list.index(normalized_k_entity), len(question_node_list))
+            s_id = question_node_list.index(normalized_k_entity) #list.index()
+            g.add_edge(question_node_list.index(normalized_k_entity), len(question_node_list)) #edge between
             evidence_tokens = list()
             evidence_masks = list()
             evidence_ids = list()
@@ -219,11 +222,11 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
             egde_sent_mask[0, :len(evidence_tokens)].fill_(0)
      
             g.edges[s_id, len(question_node_list)].data['evidence'] = edge_features
-            g.edges[s_id, len(question_node_list)].data['evidence_mask'] = edge_feature_masks
-            g.edges[s_id, len(question_node_list)].data['evidence_sent_mask'] = egde_sent_mask
+            g.edges[s_id, len(question_node_list)].data['evidence_mask'] = edge_feature_masks #edge feature mask
+            g.edges[s_id, len(question_node_list)].data['evidence_sent_mask'] = egde_sent_mask #edge sentence mask
 
 
-        
+    #negative entities
     for neg_et in negative_entities:
         for k_entity in neg_et['evidence']:
             normalized_k_entity = normalize(k_entity)
@@ -258,6 +261,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
     
     
     ### Batch the sentences and get BERT embeddings
+    #get embeddings
     if 'evidence' in g.edata:
         evi = g.edata['evidence'].to(device)
         evi_mask = g.edata['evidence_mask'].to(device)
@@ -280,7 +284,7 @@ def vectorize_trivia(ex, tokenizer, device, istrain, max_seq_length=64):
 
 
   
-
+    #return graph
     return g 
 
 
@@ -294,5 +298,6 @@ class TriviaQADataset(DELFTDataset):
 
 
     def __getitem__(self, index):
-        return vectorize_trivia(self.examples[index], self.tokenizer, self.args.device, self.istrain)    
+        return vectorize_trivia(self.examples[index], self.tokenizer, self.args.device, self.istrain)
+    # return g
 

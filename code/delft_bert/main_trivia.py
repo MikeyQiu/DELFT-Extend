@@ -20,7 +20,11 @@ from pytorch_transformers.tokenization_bert import BertTokenizer
 
 
 logger = logging.getLogger()
-
+'''
+1 Model Evaluation 
+2 Model Parameterization 
+3 Training/Testing 
+'''
 '''
 Model Evaluation
 '''
@@ -68,7 +72,7 @@ def parse_args():
     parser.add_argument('--dropout', type=int, default=0.5)
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--log-file', type=str, default = '../../experiments/trivia_bert.log')
-    parser.add_argument('--test', action='store_true', default=False)
+    parser.add_argument('--test', action='store_true', default=False) #false
     parser.add_argument("--self-attn", action='store_true', default=False)
 
 
@@ -101,9 +105,9 @@ if __name__ == "__main__":
         test_graph = load_data(args.test_file)
         model = torch.load(args.load_model)
         model.device = device 
-        tokenizer = BertTokenizer.from_pretrained(args.bert_model)
+        tokenizer = BertTokenizer.from_pretrained(args.bert_model) #1 pretrained model
 
-        dev_dataset = TriviaQADataset(test_graph, args, tokenizer, False)
+        dev_dataset = TriviaQADataset(test_graph, args, tokenizer, False)  #2 extract data
         dev_loader = DataLoader(dataset=dev_dataset,
                               batch_size=1,
                               collate_fn=batcher(device),
@@ -112,14 +116,14 @@ if __name__ == "__main__":
         model.to(device)
         score, total_list = evaluate(dev_loader, model)
         exit()
-
+    ####1 load data to graph ####
     train_graph = load_data(args.train_file)
     dev_graph = load_data(args.dev_file)
 
-    model = Model(args)
+    model = Model(args) #Instance of DELFT
     model.device = device 
     tokenizer = BertTokenizer.from_pretrained(args.bert_model)
-    train_dataset = TriviaQADataset(train_graph, args, tokenizer, True)
+    train_dataset = TriviaQADataset(train_graph, args, tokenizer, True) #2 extract data
     dev_dataset = TriviaQADataset(dev_graph, args, tokenizer, False)
 
 
@@ -149,17 +153,20 @@ if __name__ == "__main__":
     Training
     '''
 
-    for epoch in range(args.epochs):
+    for epoch in range(args.epochs): #epoches
         model.train()
-        for idx, batch in enumerate(tqdm(train_loader)):
-            logits = model(batch)
+        for idx, batch in enumerate(tqdm(train_loader)): #batches
+            logits = model(batch) #model delft
             pos_idx = [i for i in range(batch.label.size(0)) if batch.label[i].item() != -1]
-            loss = bce_loss_logits(logits[pos_idx], batch.label[pos_idx].type(torch.FloatTensor).to(device))
+            loss = bce_loss_logits(logits[pos_idx], batch.label[pos_idx].type(torch.FloatTensor).to(device)) #binary cross entropy
+
+            #backpropagation
             optimizer.zero_grad()
             print_loss_total += loss.data.cpu().numpy()
             loss.backward()
             optimizer.step()
-            
+
+            #log output
             if idx % mini_check_point == 0 and idx > 0:
                 logger.info('number of steps: %d, loss: %.5f time: %.5f' % (idx, print_loss_total / mini_check_point, time.time()- start))
                 print_loss_total = 0
