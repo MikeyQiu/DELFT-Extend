@@ -78,8 +78,7 @@ python train.py with dataset='questions'
 ```sh
 ./scripts/blp-transe-fb15k237.sh
 ```
-
-**4. Entity classification**
+### 4. Entity classification
 
 After generating or training for link prediction, a tensor of embeddings for all entities is computed and saved in a file with name `ent_emb-[ID].pt` where `[ID]` is the id of the experiment in the database (we use [Sacred](https://sacred.readthedocs.io/en/stable/index.html) to manage experiments). Another file called `ents-[ID].pt` contains entity identifiers for every row in the tensor of embeddings.
 
