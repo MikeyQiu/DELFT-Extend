@@ -118,14 +118,3 @@ To generate inductive splits, you can use `data/utils.py`. If you run
 ```sh
 python utils.py drop_entities --file=my-kg/all-triples.tsv
 ```
-
-this will generate `ind-train.tsv`, `ind-dev.tsv`, `ind-test.tsv` inside `my-kg` (see Appendix A in our paper for details on how these are generated). You can then train BLP-TransE with
-<!-- 
-```sh
-python train.py with dataset='my-kg' -->
-```
-
-## Alternative implementations
-
-- [Contextual Knowledge Bases](https://github.com/raphaelsty/ckb) by Raphael Sourty
- -->
