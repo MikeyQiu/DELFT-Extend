@@ -43,7 +43,7 @@ pip install -r requirements.txt
 
 ### 2. Download the data
 
-We provide a labeled QA dataset collected from [TrivaQA](https://aclanthology.org/P17-1147/) and [QBLink](https://aclanthology.org/D18-1134/) under the taxonomy of [FIGER](https://www.aaai.org/ocs/index.php/AAAI/AAAI12/paper/view/5152) coarse labels. Please download the processed files and put into folder data 
+We provide a labeled QA dataset collected from [TrivaQA](https://aclanthology.org/P17-1147/) and [QBLink](https://aclanthology.org/D18-1134/) under the taxonomy of [FIGER](https://www.aaai.org/ocs/index.php/AAAI/AAAI12/paper/view/5152) 8 coarse labels. Please download the processed files and put into folder data 
 
 | Download link                                                | Size (compressed) |
 | ------------------------------------------------------------ | ----------------- |
