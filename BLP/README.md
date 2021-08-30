@@ -1,4 +1,4 @@
-# Inductive entity representations from text via link prediction
+# BLP Based Text Classification
 
 <div>
 <a href="https://github.com/migalkin/StarE/blob/master/LICENSE">
@@ -12,7 +12,7 @@
 </div>
 <br><br>
 
-This repository contains the code used for the experiments in the paper "Inductive entity representations from text via link prediction", presented at The Web Conference, 2021. To refer to our work, please use the following:
+This repository contains the code used for question and entity description classification. The implementation is based on the paper "Inductive entity representations from text via link prediction". For more deatails please refer the following:
 
 ```bibtex
 @inproceedings{daza2021inductive,
@@ -24,15 +24,12 @@ This repository contains the code used for the experiments in the paper "Inducti
 }
 ```
 
-In this work, we show how a BERT-based text encoder can be fine-tuned with a link prediction objective, in a graph where entities have an associated textual description. We call the resulting model BLP. There are three interesting properties of a trained BLP model:
+In this work, we adopt BLP classfiers to understand the intention of question and summerize the semantic of entities' description. To this end, (1two fine-tuned BERT encoder are trained for each of specific task and (2)we used logistic regression models to fit in the generated embedding for classification.
 
-- It can predict a link between entities, even if one or both were not present during training.
-- It produces useful representations for a classifier, that don't require retraining the encoder.
-- It improves an information retrieval system, by better matching entities and questions about them.
 
 ## Usage
 
-Please follow the instructions next to reproduce our experiments, and to train a model with your own data.
+Please follow the instructions to reproduce the experiments output, or to train a classification model with your own data.
 
 ### 1. Install the requirements
 
@@ -46,37 +43,39 @@ pip install -r requirements.txt
 
 ### 2. Download the data
 
-Download the required compressed datasets into the `data` folder:
+We provide a labeled QA dataset collected from [TrivaQA](https://aclanthology.org/P17-1147/) and [QBLink](https://aclanthology.org/D18-1134/) under the taxonomy of FIGER coarse labels. Please download the processed files and put into folder data 
 
 | Download link                                                | Size (compressed) |
 | ------------------------------------------------------------ | ----------------- |
-| [UMLS](https://surfdrive.surf.nl/files/index.php/s/NvuKQuBetmOUe1b/download) (small graph for tests) | 121 KB            |
-| [WN18RR](https://surfdrive.surf.nl/files/index.php/s/N1c8VRH0I6jTJuN/download) | 6.6 MB            |
-| [FB15k-237](https://surfdrive.surf.nl/files/index.php/s/rGqLTDXRFLPJYg7/download) | 21 MB             |
-| [Wikidata5M](https://surfdrive.surf.nl/files/index.php/s/TEE96zweMxsoGmR/download) | 1.4 GB            |
-| [GloVe embeddings](https://surfdrive.surf.nl/files/index.php/s/zAHCIBc6PAb3NXi/download) | 423 MB            |
-| [DBpedia-Entity](https://surfdrive.surf.nl/files/index.php/s/BOD7SoDTchVO9ed/download) | 1.3 GB            |
+| [Labeled Questions](https://drive.google.com/file/d/1dg5iku9lsYxvezK8swCHGqKMqxRA73nu/view?usp=sharing) | 1.5 MB            |
+| [Labeled Entities](https://drive.google.com/file/d/1WW3-snDC1TmyyVkDV5Brt-18vvbhV7KG/view?usp=sharing) | 1 MB            |
 
 Then use `tar` to extract the files, e.g.
 
 ```sh
-tar -xzvf WN18RR.tar.gz
+tar -xzvf questions.zip
 ```
-
+<!-- 
 Note that the KG-related files above contain both *transductive* and *inductive* splits. Transductive splits are commonly used to evaluate lookup-table methods like ComplEx, while inductive splits contain entities in the test set that are not present in the training set. Files with triples for the inductive case have the `ind` prefix, e.g. `ind-train.txt`.
-
-### 2. Reproduce the experiments
+ -->
+### 3. Fine-tuned BERT model training
 
 **Link prediction**
-
+We provide trained fine-tuned BERT encoders, please download and put under the folder models. To generate embedding by provided model please run 
+```sh
+python embedding.py with dataset='questions'
+```
 To check that all dependencies are correctly installed, run a quick test on a small graph (this should take less than 1 minute on GPU):
 
 ```sh
 ./scripts/test-umls.sh
 ```
-
-The following table is a adapted from our paper. The "Script" column contains the name of the script that reproduces the experiment for the corresponding model and dataset. For example, if you want to reproduce the results of BLP-TransE on FB15k-237, run
-
+If you want to train another fine-tuned model, please follow the same data format and run the following command. 
+```sh
+python train.py with dataset='questions'
+```
+<!-- The following table is a adapted from our paper. The "Script" column contains the name of the script that reproduces the experiment for the corresponding model and dataset. For example, if you want to reproduce the results of BLP-TransE on FB15k-237, run -->
+<!-- 
 ```sh
 ./scripts/blp-transe-fb15k237.sh
 ```
@@ -173,14 +172,19 @@ The following table is a adapted from our paper. The "Script" column contains th
     <td>blp-simple-wikidata5m.sh</td>
   </tr>
 </tbody>
-</table>
+</table> -->
 
 
-**Entity classification**
+**4. Entity classification**
 
-After training for link prediction, a tensor of embeddings for all entities is computed and saved in a file with name `ent_emb-[ID].pt` where `[ID]` is the id of the experiment in the database (we use [Sacred](https://sacred.readthedocs.io/en/stable/index.html) to manage experiments). Another file called `ents-[ID].pt` contains entity identifiers for every row in the tensor of embeddings.
+After generating or training for link prediction, a tensor of embeddings for all entities is computed and saved in a file with name `ent_emb-[ID].pt` where `[ID]` is the id of the experiment in the database (we use [Sacred](https://sacred.readthedocs.io/en/stable/index.html) to manage experiments). Another file called `ents-[ID].pt` contains entity identifiers for every row in the tensor of embeddings.
 
-To ease reproducibility, we provide these tensors, which are required in the entity classification task. Click on the ID, download the file into the `output` folder, and decompress it. An experiment can be reproduced using the following command:
+```sh
+python train.py node_classification with dataset=DATASET
+```
+
+The embedding will be used to fit a logistic regression classifier. The corresponding lr classifiers are already in the models folder, to perform classification on embedding files, please run 
+<!-- To ease reproducibility, we provide these tensors, which are required in the entity classification task. Click on the ID, download the file into the `output` folder, and decompress it. An experiment can be reproduced using the following command: -->
 
 ```sh
 python train.py node_classification with checkpoint=ID dataset=DATASET
@@ -269,16 +273,16 @@ python train.py node_classification with checkpoint=199 dataset=WN18RR
 </table>
 
 
-**Information retrieval**
+<!-- **Information retrieval**
 
 This task runs with a pre-trained model saved from the link prediction task. For example, if the model trained is `blp` with `transe` and it was saved as `model.pt`, then run the following command to run the information retrieval task:
 
 ```sh
 python retrieval.py with model=blp rel_model=transe \
 checkpoint='output/model.pt'
-```
+``` -->
 
-
+<!-- 
 ## Using your own data
 
 If you have a knowledge graph where entities have textual descriptions, you can train a BLP model for the tasks of inductive link prediction, and entity classification (if you also have labels for entities).
@@ -294,7 +298,7 @@ python utils.py drop_entities --file=my-kg/all-triples.tsv
 this will generate `ind-train.tsv`, `ind-dev.tsv`, `ind-test.tsv` inside `my-kg` (see Appendix A in our paper for details on how these are generated). You can then train BLP-TransE with
 
 ```sh
-python train.py with dataset='my-kg'
+python train.py with dataset='my-kg' -->
 ```
 
 ## Alternative implementations
