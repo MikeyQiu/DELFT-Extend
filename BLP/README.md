@@ -24,7 +24,9 @@ This repository contains the code used for question and entity description class
 }
 ```
 
-In this work, we adopt BLP classfiers to understand the intention of question and summerize the semantic of entities' description. To this end, (1two fine-tuned BERT encoder are trained for each of specific task and (2)we used logistic regression models to fit in the generated embedding for classification.
+In this work, we adopt BLP classfiers to understand the intention of question and summerize the semantic of entities' description.
+- Two fine-tuned BERT encoder are trained for each of specific task.
+- Using fine-tuned BERT model's output as feature, logistic regression models to fit in the generated embedding for classification.
 
 
 ## Usage
