@@ -87,18 +87,19 @@ After generating or training for link prediction, a tensor of embeddings for all
 python train.py node_classification with dataset=DATASET
 ```
 
-The embedding will be used to fit a logistic regression classifier. The corresponding lr classifiers are already in the models folder, to perform classification on embedding files, please run 
+
 <!-- To ease reproducibility, we provide these tensors, which are required in the entity classification task. Click on the ID, download the file into the `output` folder, and decompress it. An experiment can be reproduced using the following command: -->
+The embedding will be used to fit a logistic regression classifier. The corresponding lr classifiers are already in the models folder, to perform classification on embedding files, please run 
 
 ```sh
-python train.py node_classification with checkpoint=ID dataset=DATASET
+python train.py node_classification with dataset=questions
 ```
-
+<!-- 
 where `DATASET` is either `WN18RR` or `FB15k-237`. For example:
 
 ```sh
 python train.py node_classification with checkpoint=199 dataset=WN18RR
-```
+``` -->
 
 
 <!-- **Information retrieval**
