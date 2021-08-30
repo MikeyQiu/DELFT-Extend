@@ -57,15 +57,19 @@ Note that the KG-related files above contain both *transductive* and *inductive*
 
 **Link prediction**
 We provide trained fine-tuned BERT encoders, please download and put under the folder models. To generate embedding by provided model please run 
+| Download link                                                | Size (compressed) |
+| ------------------------------------------------------------ | ----------------- |
+| [Fine-tuned BERT for questions](https://drive.google.com/file/d/1-BeaC1R-2q_4ONMi52-0J1j9bVHEqKXE/view?usp=sharing) | 433 MB          |
+| [Fine-tuned BERT for entity descriptions](https://drive.google.com/file/d/14GsJNzPYHtjuX4c_8Wdz2eB4UHu4HDQD/view?usp=sharing) | 433 MB            |
 ```sh
 python embedding.py with dataset='questions'
 ```
-To check that all dependencies are correctly installed, run a quick test on a small graph (this should take less than 1 minute on GPU):
+<!-- To check that all dependencies are correctly installed, run a quick test on a small graph (this should take less than 1 minute on GPU):
 
 ```sh
 ./scripts/test-umls.sh
-```
-If you want to train another fine-tuned model, please follow the same data format and run the following command. 
+``` -->
+If you want to train a new fine-tuned model, please follow the same data format and run the following command. 
 ```sh
 python train.py with dataset='questions'
 ```
