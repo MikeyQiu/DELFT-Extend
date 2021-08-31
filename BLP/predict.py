@@ -27,11 +27,11 @@ OUT_PATH = 'output/'
 
 @ex.config
 def config():
-    dataset = 'question'
+    dataset = 'entities'
     checkpoint = None
     use_cached_text = False
     lr_classifier_name = "lr-entities.model"
-    result_name = "labeled_entities_test.txt"
+    result_name = "labeled_"
 
 
 @ex.command
@@ -189,9 +189,9 @@ def node_prediction(dataset, checkpoint, _run: Run, _log: Logger,result_name):
         n += 1
     res = np.vstack((np.array(entities), np.array(predictions), np.array(probs)))
     if tokens[-1] == "questions":
-        np.savetxt(result_name, res.T, delimiter=' ', fmt='%s')
+        np.savetxt(result_name+"questions.txt", res.T, delimiter=' ', fmt='%s')
     else:
-        np.savetxt(result_name, res.T, delimiter=' ', fmt='%s')
+        np.savetxt(result_name+"entities.txt", res.T, delimiter=' ', fmt='%s')
 
 
 ex.run_commandline()

@@ -35,7 +35,7 @@ if all([uri, database]):
 
 @ex.config
 def config():
-    dataset = 'question'
+    dataset = 'entities'
     inductive = True
     dim = 128
     model = 'blp'
