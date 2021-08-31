@@ -1,0 +1,9 @@
+nltk
+numpy
+scipy
+sklearn
+troch==1.2.0
+transformers==4.6.0
+dgl==0.4.1
+tqdm==4.60.0
+pytorch_transformers==1.2.0
